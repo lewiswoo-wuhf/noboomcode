@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>不要抽到炸弹</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-page="home">
+  <div class="page-shell">
+    <header class="hero">
+      <div class="brand">
+        <div class="logo">💣</div>
+        <div>
+          <h1>不要抽到炸弹</h1>
+          <p class="tagline">避开炸弹，快速匹配，体验瞬间刺激。</p>
+        </div>
+      </div>
+      <div class="user-panel" id="userPanel"></div>
+    </header>
+
+    <main class="content">
+      <section class="card highlight">
+        <div class="section-head">
+          <h2>马上开始</h2>
+          <p>点击匹配按钮，与其他玩家进入游戏对战。</p>
+        </div>
+        <div class="rule-list">
+          <div class="rule-item">
+            <strong>1</strong>
+            <p>抽取卡牌，避免炸弹。</p>
+          </div>
+          <div class="rule-item">
+            <strong>2</strong>
+            <p>匹配按钮已防抖，避免重复点击。</p>
+          </div>
+          <div class="rule-item">
+            <strong>3</strong>
+            <p>未登录时会提示登录，登录后即可匹配。</p>
+          </div>
+        </div>
+        <button id="matchButton" class="primary-button" type="button">匹配用户</button>
+      </section>
+
+      <section class="card tips-card">
+        <h3>游戏说明</h3>
+        <p>这是一个简单直观的匹配首页，适配主流浏览器与移动端屏幕，界面简洁友好。</p>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-mask hidden" id="loginModal">
+    <div class="modal-card">
+      <button class="close-button" id="closeModalButton" aria-label="关闭登录弹窗">×</button>
+      <h2>登录后即可匹配</h2>
+      <p>请输入昵称，快速开始游戏。</p>
+      <form id="loginForm">
+        <label>
+          昵称
+          <input id="nicknameInput" type="text" maxlength="12" placeholder="你的昵称" required />
+        </label>
+        <label>
+          头像 URL（可选）
+          <input id="avatarInput" type="url" placeholder="https://..." />
+        </label>
+        <button class="primary-button" type="submit">登录并匹配</button>
+      </form>
+      <p class="small-note">登录信息仅保存在本地浏览器。</p>
+    </div>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>
