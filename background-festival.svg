@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="lanternGradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f97316" />
+      <stop offset="100%" stop-color="#be123c" />
+    </linearGradient>
+    <linearGradient id="cloudGradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fee2e2" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#fecdd3" stop-opacity="0.35" />
+    </linearGradient>
+  </defs>
+  <rect width="900" height="560" fill="rgba(255,236,230,0.95)" />
+  <circle cx="140" cy="110" r="68" fill="#fde68a" opacity="0.85" />
+  <g opacity="0.95">
+    <path d="M50 260c28-44 88-50 132-18s72 80 96 120" fill="none" stroke="#f87171" stroke-width="12" stroke-linecap="round" />
+    <path d="M780 80c18 18 34 50 12 78s-50 18-82 4" fill="none" stroke="#c026d3" stroke-width="10" stroke-linecap="round" />
+  </g>
+  <g opacity="0.95">
+    <path d="M700 440c-36 46-110 66-160 20s-20-112 20-148 98-44 138-2 12 100 2 130" fill="none" stroke="#fb7185" stroke-width="12" stroke-linecap="round" />
+    <path d="M180 450c24-18 46-62 24-96s-74-24-104-10" fill="none" stroke="#f43f5e" stroke-width="12" stroke-linecap="round" />
+  </g>
+  <circle cx="760" cy="160" r="6" fill="#f97316" />
+  <circle cx="820" cy="240" r="9" fill="#f43f5e" />
+  <circle cx="620" cy="120" r="8" fill="#fb7185" />
+  <g transform="translate(120, 240)">
+    <path d="M40 0c22 0 40 18 40 40s-18 40-40 40-40-18-40-40 18-40 40-40z" fill="url(#cloudGradient)" />
+    <path d="M24 18h32" stroke="#ef4444" stroke-width="6" stroke-linecap="round" />
+  </g>
+  <g transform="translate(260, 80)">
+    <ellipse cx="0" cy="28" rx="38" ry="20" fill="#f8fafc" opacity="0.75" />
+    <path d="M-22 22h44" stroke="#f97316" stroke-width="6" stroke-linecap="round" />
+  </g>
+  <g transform="translate(82, 168)">
+    <ellipse cx="0" cy="0" rx="38" ry="56" fill="url(#lanternGradient)" />
+    <path d="M0 -56v112" stroke="#fde68a" stroke-width="6" />
+    <path d="M-18 14h36" stroke="#fde68a" stroke-width="6" stroke-linecap="round" />
+  </g>
+  <g transform="translate(190, 120)">
+    <ellipse cx="0" cy="0" rx="30" ry="48" fill="url(#lanternGradient)" />
+    <path d="M0 -48v96" stroke="#fde68a" stroke-width="5" />
+    <path d="M-16 8h32" stroke="#fde68a" stroke-width="5" stroke-linecap="round" />
+  </g>
+  <g transform="translate(760, 470)">
+    <path d="M0-24c24 16 42 24 52 14s-8-34-24-42-40-2-48 8 0 18 20 20z" fill="#ef4444" opacity="0.8" />
+    <circle cx="0" cy="0" r="14" fill="#fbbf24" />
+  </g>
+</svg>
