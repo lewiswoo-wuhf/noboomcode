@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>游戏房间 - 不要抽到炸弹</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-page="game">
+  <div class="page-shell">
+    <header class="hero">
+      <div class="brand">
+        <div class="logo">💣</div>
+        <div>
+          <h1>游戏房间</h1>
+          <p class="tagline">匹配完成，准备进入下一局。</p>
+        </div>
+      </div>
+      <div class="user-panel" id="userPanel"></div>
+    </header>
+
+    <main class="content">
+      <section class="card highlight countdown-card">
+        <div>
+          <h2>已进入游戏房间</h2>
+          <p>5 名玩家已准备就绪，房间创建成功。</p>
+        </div>
+        <div class="player-grid" id="roomList"></div>
+        <div class="match-footer">
+          <a class="secondary-button" href="index.html">返回首页</a>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>

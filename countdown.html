@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>倒计时 - 不要抽到炸弹</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-page="countdown">
+  <div class="page-shell">
+    <header class="hero">
+      <div class="brand">
+        <div class="logo">💣</div>
+        <div>
+          <h1>匹配成功</h1>
+          <p class="tagline">即将进入游戏房间，准备好迎接挑战。</p>
+        </div>
+      </div>
+      <div class="user-panel" id="userPanel"></div>
+    </header>
+
+    <main class="content">
+      <section class="card highlight countdown-card">
+        <div>
+          <h2>倒计时开始</h2>
+          <p>请确认你的网络稳定，3 秒后自动进入游戏房间。</p>
+        </div>
+        <div class="player-grid" id="countdownList"></div>
+        <div class="countdown-circle">
+          <span id="countdownValue">3</span>
+        </div>
+        <div class="match-footer">
+          <a class="secondary-button" href="index.html">返回首页</a>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>

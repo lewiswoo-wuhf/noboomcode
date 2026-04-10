@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>匹配中 - 不要抽到炸弹</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-page="match">
+  <div class="page-shell">
+    <header class="hero">
+      <div class="brand">
+        <div class="logo">💣</div>
+        <div>
+          <h1>匹配对局</h1>
+          <p class="tagline">系统正在为你拉取 5 名玩家，自动匹配中。</p>
+        </div>
+      </div>
+      <div class="user-panel" id="userPanel"></div>
+    </header>
+
+    <main class="content">
+      <section class="card match-card">
+        <div class="match-head">
+          <div>
+            <h2>匹配进度</h2>
+            <p id="matchMessage">请稍候，正在为你匹配...</p>
+          </div>
+          <button id="cancelButton" class="secondary-button">取消匹配</button>
+        </div>
+
+        <div class="progress-track" aria-hidden="true">
+          <div class="progress-fill" id="matchProgress"></div>
+        </div>
+
+        <div class="player-grid" id="matchList" aria-label="已匹配玩家"></div>
+
+        <div class="match-footer">
+          <button id="retryButton" class="secondary-button hidden">重新匹配</button>
+          <a class="secondary-button" href="index.html">返回首页</a>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>
