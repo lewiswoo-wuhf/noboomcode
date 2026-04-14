@@ -21,19 +21,22 @@
 
     <main class="content">
       <section class="game-table-container">
-        <!-- 牌桌区域 -->
-        <div class="game-table">
-          <!-- 牌桌中央区域 -->
-          <div class="table-center">
-            <div class="deck-area">
-              <div class="card-deck">🎴</div>
-              <p class="table-message">游戏进行中...</p>
-            </div>
-          </div>
-          
-          <!-- 5个玩家位置 - 环形分布 -->
+        <!-- 游戏区域：包含牌桌和玩家 -->
+        <div class="game-area">
+          <!-- 玩家环形分布（牌桌外围） -->
           <div class="players-circle" id="playersCircle">
             <!-- 玩家将通过 JavaScript 动态生成 -->
+          </div>
+          
+          <!-- 牌桌区域（居中） -->
+          <div class="game-table">
+            <!-- 牌桌中央区域 -->
+            <div class="table-center">
+              <div class="deck-area">
+                <div class="card-deck">🎴</div>
+                <p class="table-message">游戏进行中...</p>
+              </div>
+            </div>
           </div>
           
           <!-- 当前玩家指示器（箭头） -->
@@ -42,19 +45,20 @@
           </div>
         </div>
         
-        <!-- 手牌区域 -->
+        <!-- 游戏控制按钮（手牌区上方） -->
+        <div class="game-controls">
+          <button class="primary-button action-btn" id="drawCardBtn" disabled>抽牌</button>
+          <button class="secondary-button action-btn" id="playCardBtn" disabled>出牌</button>
+          <button class="tertiary-button action-btn" id="leaveRoomBtn">离开房间</button>
+        </div>
+        
+        <!-- 手牌区域（中间位置） -->
         <div class="hand-area" id="handArea">
           <h3>我的手牌</h3>
           <div class="hand-cards" id="handCards">
             <!-- 手牌将在这里显示 -->
           </div>
           <div class="card-count">剩余卡牌: <span id="cardCount">0</span></div>
-        </div>
-        
-        <!-- 游戏控制按钮 -->
-        <div class="game-controls">
-          <button class="primary-button" id="drawCardBtn" disabled>抽卡</button>
-          <button class="secondary-button" id="leaveRoomBtn">离开房间</button>
         </div>
       </section>
     </main>

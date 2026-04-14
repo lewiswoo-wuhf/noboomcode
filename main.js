@@ -385,8 +385,8 @@ function calculatePlayerPositions(count, radiusX, radiusY, centerX, centerY) {
   const angleStep = (2 * Math.PI) / count;
   
   for (let i = 0; i < count; i++) {
-    // 从顶部开始（-PI/2），顺时针排列
-    const angle = -Math.PI / 2 + i * angleStep;
+    // 从底部开始（PI/2），逆时针排列，这样自己在底部
+    const angle = Math.PI / 2 + i * angleStep;
     const x = centerX + radiusX * Math.cos(angle);
     const y = centerY + radiusY * Math.sin(angle);
     positions.push({ x, y, index: i });
@@ -399,52 +399,80 @@ function renderGameTable(players) {
   const circle = document.getElementById('playersCircle');
   if (!circle) return;
   
-  const table = document.querySelector('.game-table');
-  const tableRect = table.getBoundingClientRect();
-  const centerX = tableRect.width / 2;
-  const centerY = tableRect.height / 2;
+  const gameArea = document.querySelector('.game-area');
+  const areaRect = gameArea.getBoundingClientRect();
+  const centerX = areaRect.width / 2;
+  const centerY = areaRect.height / 2;
   
-  // 根据表格大小计算半径
-  const radiusX = tableRect.width * 0.38;
-  const radiusY = tableRect.height * 0.38;
+  // 玩家头像放在牌桌外围，使用更大的半径
+  const radiusX = areaRect.width * 0.42;
+  const radiusY = areaRect.height * 0.42;
   
-  const positions = calculatePlayerPositions(players.length, radiusX, radiusY, centerX, centerY);
+  // 重新排列玩家顺序，让自己在第一个位置（底部）
+  const selfIndex = players.findIndex(p => p.self);
+  const reorderedPlayers = [
+    players[selfIndex],
+    ...players.slice(0, selfIndex),
+    ...players.slice(selfIndex + 1)
+  ];
   
-  circle.innerHTML = players.map((player, index) => {
+  const positions = calculatePlayerPositions(reorderedPlayers.length, radiusX, radiusY, centerX, centerY);
+  
+  // 为每个玩家生成随机手牌数量（1-10张）
+  const handCounts = reorderedPlayers.map((player, index) => {
+    if (player.self) {
+      return 4; // 自己的手牌固定显示
+    }
+    return Math.floor(Math.random() * 10) + 1;
+  });
+  
+  circle.innerHTML = reorderedPlayers.map((player, index) => {
     const pos = positions[index];
+    const cardCount = handCounts[index];
+    
     return `
       <div class="player-position ${player.self ? 'player-self' : ''}" 
            data-index="${index}"
            style="left: ${pos.x}px; top: ${pos.y}px; transform: translate(-50%, -50%);">
         <div class="player-avatar-wrapper">
           <img class="player-avatar" src="${escapeHtml(player.avatar)}" alt="${escapeHtml(player.name)} 的头像" />
+          ${!player.self ? `<div class="hand-count-badge">${cardCount}</div>` : ''}
         </div>
         <div class="player-name-tag">${escapeHtml(player.name)}</div>
       </div>
     `;
   }).join('');
+  
+  // 保存手牌数量和重新排序后的玩家列表到全局变量
+  window.playerHandCounts = handCounts;
+  window.currentPlayers = reorderedPlayers;
 }
 
 function updateTurnIndicator(currentPlayerIndex, players) {
   const indicator = document.getElementById('turnIndicator');
   if (!indicator) return;
   
-  const table = document.querySelector('.game-table');
-  const tableRect = table.getBoundingClientRect();
-  const centerX = tableRect.width / 2;
-  const centerY = tableRect.height / 2;
-  const radiusX = tableRect.width * 0.38;
-  const radiusY = tableRect.height * 0.38;
+  const gameArea = document.querySelector('.game-area');
+  const areaRect = gameArea.getBoundingClientRect();
+  const centerX = areaRect.width / 2;
+  const centerY = areaRect.height / 2;
+  const radiusX = areaRect.width * 0.42;
+  const radiusY = areaRect.height * 0.42;
   
   // 计算当前玩家位置
   const angleStep = (2 * Math.PI) / players.length;
-  const angle = -Math.PI / 2 + currentPlayerIndex * angleStep;
+  const angle = Math.PI / 2 + currentPlayerIndex * angleStep;
   const x = centerX + radiusX * Math.cos(angle);
   const y = centerY + radiusY * Math.sin(angle);
   
-  // 将指示器放在玩家上方
-  indicator.style.left = `${x}px`;
-  indicator.style.top = `${y - 60}px`;
+  // 将指示器放在玩家外侧一点
+  const indicatorRadiusX = radiusX + 60;
+  const indicatorRadiusY = radiusY + 60;
+  const indicatorX = centerX + indicatorRadiusX * Math.cos(angle);
+  const indicatorY = centerY + indicatorRadiusY * Math.sin(angle);
+  
+  indicator.style.left = `${indicatorX}px`;
+  indicator.style.top = `${indicatorY}px`;
   indicator.style.transform = 'translate(-50%, -50%)';
   
   // 移除所有玩家的 current-turn 类
@@ -457,18 +485,31 @@ function updateTurnIndicator(currentPlayerIndex, players) {
   if (currentPlayerEl) {
     currentPlayerEl.classList.add('current-turn');
   }
+  
+  // 如果当前玩家是自己，高亮手牌区域
+  const handArea = document.getElementById('handArea');
+  if (handArea) {
+    if (players[currentPlayerIndex] && players[currentPlayerIndex].self) {
+      handArea.classList.add('current-turn-highlight');
+    } else {
+      handArea.classList.remove('current-turn-highlight');
+    }
+  }
 }
 
 function startTurnRotation(players) {
   let currentIndex = 0;
   
+  // 使用重新排序后的玩家列表
+  const displayPlayers = window.currentPlayers || players;
+  
   // 初始显示
-  updateTurnIndicator(currentIndex, players);
+  updateTurnIndicator(currentIndex, displayPlayers);
   
   // 每3秒轮换一次
   setInterval(() => {
-    currentIndex = (currentIndex + 1) % players.length;
-    updateTurnIndicator(currentIndex, players);
+    currentIndex = (currentIndex + 1) % displayPlayers.length;
+    updateTurnIndicator(currentIndex, displayPlayers);
   }, 3000);
 }
 
@@ -476,27 +517,90 @@ function initHandArea() {
   const handCards = document.getElementById('handCards');
   const cardCount = document.getElementById('cardCount');
   const drawCardBtn = document.getElementById('drawCardBtn');
+  const playCardBtn = document.getElementById('playCardBtn');
   
-  if (!handCards || !cardCount || !drawCardBtn) return;
+  if (!handCards || !cardCount || !drawCardBtn || !playCardBtn) return;
   
   // 模拟手牌数据
   const myCards = ['🂡', '🂱', '🃁', '🃑'];
-  handCards.innerHTML = myCards.map(card => 
-    `<div class="hand-card">${card}</div>`
+  handCards.innerHTML = myCards.map((card, index) => 
+    `<div class="hand-card" style="animation: dealCard 0.5s ease-out ${index * 0.1}s both;">${card}</div>`
   ).join('');
   
   cardCount.textContent = '4';
   drawCardBtn.disabled = false;
   
-  // 抽卡按钮事件
+  // 抽牌按钮事件
   drawCardBtn.addEventListener('click', () => {
     const newCard = ['🂢', '🂲', '🃂', '🃒'][Math.floor(Math.random() * 4)];
     const cardDiv = document.createElement('div');
     cardDiv.className = 'hand-card';
     cardDiv.textContent = newCard;
+    cardDiv.style.animation = 'dealCard 0.5s ease-out';
     handCards.appendChild(cardDiv);
     cardCount.textContent = String(handCards.children.length);
+    
+    // 添加抽牌动画效果
+    cardDiv.addEventListener('animationend', () => {
+      cardDiv.classList.add('dealt');
+    });
+    
+    // 有牌后可以出牌
+    playCardBtn.disabled = false;
   });
+  
+  // 出牌按钮事件
+  playCardBtn.addEventListener('click', () => {
+    const cards = handCards.querySelectorAll('.hand-card');
+    if (cards.length === 0) {
+      alert('没有手牌可以出！');
+      return;
+    }
+    
+    // 随机出一张牌（最后一张）
+    const lastCard = cards[cards.length - 1];
+    lastCard.style.animation = 'playCard 0.5s ease-out forwards';
+    
+    setTimeout(() => {
+      lastCard.remove();
+      cardCount.textContent = String(handCards.children.length);
+      
+      // 如果没有牌了，禁用出牌按钮
+      if (handCards.children.length === 0) {
+        playCardBtn.disabled = true;
+      }
+    }, 500);
+  });
+}
+
+// 更新玩家手牌数量显示
+function updatePlayerHandCount(playerIndex, newCount) {
+  if (!window.playerHandCounts) return;
+  
+  window.playerHandCounts[playerIndex] = newCount;
+  
+  // 如果是自己，更新手牌区域
+  const players = window.currentPlayers || getStoredMatch();
+  if (players && players[playerIndex] && players[playerIndex].self) {
+    const cardCount = document.getElementById('cardCount');
+    if (cardCount) {
+      cardCount.textContent = String(newCount);
+    }
+  } else {
+    // 更新其他玩家的手牌数量徽章
+    const playerEl = document.querySelector(`.player-position[data-index="${playerIndex}"]`);
+    if (playerEl) {
+      const badge = playerEl.querySelector('.hand-count-badge');
+      if (badge) {
+        // 添加更新动画
+        badge.style.animation = 'none';
+        setTimeout(() => {
+          badge.textContent = newCount;
+          badge.style.animation = 'badgePop 0.3s ease-out';
+        }, 10);
+      }
+    }
+  }
 }
 
 function initLeaveRoom() {
@@ -521,7 +625,7 @@ function initGame() {
     return;
   }
 
-  // 渲染游戏桌和玩家环形布局
+  // 渲染游戏桌和玩家环形布局（会自动重新排序，自己在底部）
   renderGameTable(players);
   
   // 初始化手牌区域
@@ -530,8 +634,16 @@ function initGame() {
   // 初始化离开房间按钮
   initLeaveRoom();
   
-  // 启动回合轮换动画
-  startTurnRotation(players);
+  // 启动回合轮换动画（使用重新排序后的玩家列表）
+  startTurnRotation(window.currentPlayers || players);
+  
+  // ========== 测试功能：在控制台暴露函数 ==========
+  // 使用方法：在浏览器控制台输入 testUpdateHandCount(0, 7) 来更新玩家0的手牌数为7
+  window.testUpdateHandCount = updatePlayerHandCount;
+  console.log('✅ 游戏房间已加载');
+  console.log('📝 测试命令: testUpdateHandCount(playerIndex, newCount)');
+  console.log('   例如: testUpdateHandCount(1, 5) - 将玩家1的手牌数更新为5');
+  console.log('💡 提示: 自己的头像在底部，与手牌相邻');
 }
 
 function initPage() {
