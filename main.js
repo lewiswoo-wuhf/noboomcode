@@ -378,6 +378,139 @@ function renderRoomPlayers(players) {
   `).join('');
 }
 
+// ========== Game Room Functions ==========
+
+function calculatePlayerPositions(count, radiusX, radiusY, centerX, centerY) {
+  const positions = [];
+  const angleStep = (2 * Math.PI) / count;
+  
+  for (let i = 0; i < count; i++) {
+    // 从顶部开始（-PI/2），顺时针排列
+    const angle = -Math.PI / 2 + i * angleStep;
+    const x = centerX + radiusX * Math.cos(angle);
+    const y = centerY + radiusY * Math.sin(angle);
+    positions.push({ x, y, index: i });
+  }
+  
+  return positions;
+}
+
+function renderGameTable(players) {
+  const circle = document.getElementById('playersCircle');
+  if (!circle) return;
+  
+  const table = document.querySelector('.game-table');
+  const tableRect = table.getBoundingClientRect();
+  const centerX = tableRect.width / 2;
+  const centerY = tableRect.height / 2;
+  
+  // 根据表格大小计算半径
+  const radiusX = tableRect.width * 0.38;
+  const radiusY = tableRect.height * 0.38;
+  
+  const positions = calculatePlayerPositions(players.length, radiusX, radiusY, centerX, centerY);
+  
+  circle.innerHTML = players.map((player, index) => {
+    const pos = positions[index];
+    return `
+      <div class="player-position ${player.self ? 'player-self' : ''}" 
+           data-index="${index}"
+           style="left: ${pos.x}px; top: ${pos.y}px; transform: translate(-50%, -50%);">
+        <div class="player-avatar-wrapper">
+          <img class="player-avatar" src="${escapeHtml(player.avatar)}" alt="${escapeHtml(player.name)} 的头像" />
+        </div>
+        <div class="player-name-tag">${escapeHtml(player.name)}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function updateTurnIndicator(currentPlayerIndex, players) {
+  const indicator = document.getElementById('turnIndicator');
+  if (!indicator) return;
+  
+  const table = document.querySelector('.game-table');
+  const tableRect = table.getBoundingClientRect();
+  const centerX = tableRect.width / 2;
+  const centerY = tableRect.height / 2;
+  const radiusX = tableRect.width * 0.38;
+  const radiusY = tableRect.height * 0.38;
+  
+  // 计算当前玩家位置
+  const angleStep = (2 * Math.PI) / players.length;
+  const angle = -Math.PI / 2 + currentPlayerIndex * angleStep;
+  const x = centerX + radiusX * Math.cos(angle);
+  const y = centerY + radiusY * Math.sin(angle);
+  
+  // 将指示器放在玩家上方
+  indicator.style.left = `${x}px`;
+  indicator.style.top = `${y - 60}px`;
+  indicator.style.transform = 'translate(-50%, -50%)';
+  
+  // 移除所有玩家的 current-turn 类
+  document.querySelectorAll('.player-position').forEach(el => {
+    el.classList.remove('current-turn');
+  });
+  
+  // 给当前玩家添加 current-turn 类
+  const currentPlayerEl = document.querySelector(`.player-position[data-index="${currentPlayerIndex}"]`);
+  if (currentPlayerEl) {
+    currentPlayerEl.classList.add('current-turn');
+  }
+}
+
+function startTurnRotation(players) {
+  let currentIndex = 0;
+  
+  // 初始显示
+  updateTurnIndicator(currentIndex, players);
+  
+  // 每3秒轮换一次
+  setInterval(() => {
+    currentIndex = (currentIndex + 1) % players.length;
+    updateTurnIndicator(currentIndex, players);
+  }, 3000);
+}
+
+function initHandArea() {
+  const handCards = document.getElementById('handCards');
+  const cardCount = document.getElementById('cardCount');
+  const drawCardBtn = document.getElementById('drawCardBtn');
+  
+  if (!handCards || !cardCount || !drawCardBtn) return;
+  
+  // 模拟手牌数据
+  const myCards = ['🂡', '🂱', '🃁', '🃑'];
+  handCards.innerHTML = myCards.map(card => 
+    `<div class="hand-card">${card}</div>`
+  ).join('');
+  
+  cardCount.textContent = '4';
+  drawCardBtn.disabled = false;
+  
+  // 抽卡按钮事件
+  drawCardBtn.addEventListener('click', () => {
+    const newCard = ['🂢', '🂲', '🃂', '🃒'][Math.floor(Math.random() * 4)];
+    const cardDiv = document.createElement('div');
+    cardDiv.className = 'hand-card';
+    cardDiv.textContent = newCard;
+    handCards.appendChild(cardDiv);
+    cardCount.textContent = String(handCards.children.length);
+  });
+}
+
+function initLeaveRoom() {
+  const leaveBtn = document.getElementById('leaveRoomBtn');
+  if (!leaveBtn) return;
+  
+  leaveBtn.addEventListener('click', () => {
+    if (confirm('确定要离开房间吗？')) {
+      clearMatch();
+      window.location.href = 'index.html';
+    }
+  });
+}
+
 function initGame() {
   const user = getStoredUser();
   renderUserBadge(user);
@@ -388,7 +521,17 @@ function initGame() {
     return;
   }
 
-  renderRoomPlayers(players);
+  // 渲染游戏桌和玩家环形布局
+  renderGameTable(players);
+  
+  // 初始化手牌区域
+  initHandArea();
+  
+  // 初始化离开房间按钮
+  initLeaveRoom();
+  
+  // 启动回合轮换动画
+  startTurnRotation(players);
 }
 
 function initPage() {

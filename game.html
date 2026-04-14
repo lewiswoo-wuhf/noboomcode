@@ -20,14 +20,41 @@
     </header>
 
     <main class="content">
-      <section class="card highlight countdown-card">
-        <div>
-          <h2>已进入游戏房间</h2>
-          <p>5 名玩家已准备就绪，房间创建成功。</p>
+      <section class="game-table-container">
+        <!-- 牌桌区域 -->
+        <div class="game-table">
+          <!-- 牌桌中央区域 -->
+          <div class="table-center">
+            <div class="deck-area">
+              <div class="card-deck">🎴</div>
+              <p class="table-message">游戏进行中...</p>
+            </div>
+          </div>
+          
+          <!-- 5个玩家位置 - 环形分布 -->
+          <div class="players-circle" id="playersCircle">
+            <!-- 玩家将通过 JavaScript 动态生成 -->
+          </div>
+          
+          <!-- 当前玩家指示器（箭头） -->
+          <div class="turn-indicator" id="turnIndicator">
+            <div class="arrow">▼</div>
+          </div>
         </div>
-        <div class="player-grid" id="roomList"></div>
-        <div class="match-footer">
-          <a class="secondary-button" href="index.html">返回首页</a>
+        
+        <!-- 手牌区域 -->
+        <div class="hand-area" id="handArea">
+          <h3>我的手牌</h3>
+          <div class="hand-cards" id="handCards">
+            <!-- 手牌将在这里显示 -->
+          </div>
+          <div class="card-count">剩余卡牌: <span id="cardCount">0</span></div>
+        </div>
+        
+        <!-- 游戏控制按钮 -->
+        <div class="game-controls">
+          <button class="primary-button" id="drawCardBtn" disabled>抽卡</button>
+          <button class="secondary-button" id="leaveRoomBtn">离开房间</button>
         </div>
       </section>
     </main>
