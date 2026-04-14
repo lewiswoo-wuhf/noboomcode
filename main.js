@@ -378,6 +378,113 @@ function renderRoomPlayers(players) {
   `).join('');
 }
 
+// ========== Game State Management (Issue #7) ==========
+
+function initGameStateManagement() {
+  // 初始化游戏状态
+  const gameProgress = document.getElementById('gameProgress');
+  const currentTurn = document.getElementById('currentTurn');
+  
+  if (gameProgress) {
+    gameProgress.textContent = '准备中';
+  }
+  
+  // 模拟游戏状态变化（仅用于演示）
+  setTimeout(() => {
+    if (gameProgress) gameProgress.textContent = '进行中';
+    simulatePlayerEvents();
+  }, 3000);
+  
+  // 监听页面可见性变化（处理刷新恢复）
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  
+  // 监听网络状态变化
+  window.addEventListener('online', handleOnlineStatus);
+  window.addEventListener('offline', handleOfflineStatus);
+  
+  console.log('🎮 游戏状态管理已初始化');
+}
+
+function updateGameProgress(status) {
+  const gameProgress = document.getElementById('gameProgress');
+  if (gameProgress) {
+    gameProgress.textContent = status;
+  }
+}
+
+function updateCurrentTurn(playerName) {
+  const currentTurn = document.getElementById('currentTurn');
+  if (currentTurn) {
+    currentTurn.textContent = playerName || '-';
+  }
+}
+
+function handleVisibilityChange() {
+  if (document.hidden) {
+    console.log('📱 页面已隐藏，暂停游戏动画');
+  } else {
+    console.log('👁️ 页面已显示，恢复游戏状态');
+    // 刷新页面状态
+    restoreGameState();
+  }
+}
+
+function handleOnlineStatus() {
+  console.log('🌐 网络已连接');
+  // 恢复在线状态
+  if (window.currentPlayers) {
+    const selfPlayer = window.currentPlayers.find(p => p.self);
+    if (selfPlayer) {
+      selfPlayer.online = true;
+      renderGameTable(window.currentPlayers);
+    }
+  }
+}
+
+function handleOfflineStatus() {
+  console.log('⚠️ 网络已断开');
+  updateGameProgress('网络异常');
+}
+
+function restoreGameState() {
+  // 从localStorage恢复游戏状态
+  const match = getStoredMatch();
+  if (match && match.length >= MATCH_TARGET) {
+    console.log('✅ 游戏状态已恢复');
+    updateGameProgress('恢复中');
+    setTimeout(() => {
+      updateGameProgress('进行中');
+    }, 1000);
+  }
+}
+
+function simulatePlayerEvents() {
+  // 模拟玩家进出事件（仅用于演示）
+  console.log('🎭 开始模拟玩家事件');
+  
+  // 5秒后模拟一个玩家离开
+  setTimeout(() => {
+    if (window.currentPlayers && window.currentPlayers.length > 1) {
+      const randomIndex = Math.floor(Math.random() * (window.currentPlayers.length - 1)) + 1;
+      const player = window.currentPlayers[randomIndex];
+      if (player && !player.self) {
+        player.online = false;
+        renderGameTable(window.currentPlayers);
+        console.log(`👋 ${player.name} 已断开连接`);
+        updateGameProgress('等待重连');
+        
+        // 3秒后模拟玩家重连
+        setTimeout(() => {
+          player.online = true;
+          renderGameTable(window.currentPlayers);
+          console.log(`👋 ${player.name} 已重新连接`);
+          updateGameProgress('进行中');
+        }, 3000);
+      }
+    }
+  }, 5000);
+}
+
 // ========== Game Room Functions ==========
 
 function calculatePlayerPositions(count, radiusX, radiusY, centerX, centerY) {
@@ -437,8 +544,10 @@ function renderGameTable(players) {
         <div class="player-avatar-wrapper">
           <img class="player-avatar" src="${escapeHtml(player.avatar)}" alt="${escapeHtml(player.name)} 的头像" />
           ${!player.self ? `<div class="hand-count-badge">${cardCount}</div>` : ''}
+          <div class="online-status ${player.online ? 'online' : 'offline'}"></div>
         </div>
         <div class="player-name-tag">${escapeHtml(player.name)}</div>
+        ${!player.online ? '<div class="offline-tag">离线</div>' : ''}
       </div>
     `;
   }).join('');
@@ -446,6 +555,14 @@ function renderGameTable(players) {
   // 保存手牌数量和重新排序后的玩家列表到全局变量
   window.playerHandCounts = handCounts;
   window.currentPlayers = reorderedPlayers;
+  
+  // 更新在线人数
+  const onlineCount = reorderedPlayers.filter(p => p.online).length;
+  const totalPlayers = reorderedPlayers.length;
+  const onlineCountEl = document.getElementById('onlineCount');
+  if (onlineCountEl) {
+    onlineCountEl.textContent = `${onlineCount}/${totalPlayers}`;
+  }
 }
 
 function updateTurnIndicator(currentPlayerIndex, players) {
@@ -494,6 +611,24 @@ function updateTurnIndicator(currentPlayerIndex, players) {
     } else {
       handArea.classList.remove('current-turn-highlight');
     }
+  }
+  
+  // 更新当前回合显示
+  const currentTurnEl = document.getElementById('currentTurn');
+  if (currentTurnEl && players[currentPlayerIndex]) {
+    currentTurnEl.textContent = players[currentPlayerIndex].name;
+  }
+  
+  // 更新按钮状态（只有轮到自己时才能抽牌/出牌）
+  const drawCardBtn = document.getElementById('drawCardBtn');
+  const playCardBtn = document.getElementById('playCardBtn');
+  const isMyTurn = players[currentPlayerIndex] && players[currentPlayerIndex].self;
+  
+  if (drawCardBtn) {
+    drawCardBtn.disabled = !isMyTurn;
+  }
+  if (playCardBtn) {
+    playCardBtn.disabled = !isMyTurn;
   }
 }
 
@@ -619,11 +754,17 @@ function initGame() {
   const user = getStoredUser();
   renderUserBadge(user);
 
-  const players = getStoredMatch();
+  let players = getStoredMatch();
   if (!players || players.length < MATCH_TARGET) {
     window.location.href = 'index.html';
     return;
   }
+
+  // 添加在线状态（默认为在线）
+  players = players.map(p => ({
+    ...p,
+    online: true
+  }));
 
   // 渲染游戏桌和玩家环形布局（会自动重新排序，自己在底部）
   renderGameTable(players);
@@ -633,6 +774,9 @@ function initGame() {
   
   // 初始化离开房间按钮
   initLeaveRoom();
+  
+  // 初始化游戏状态管理
+  initGameStateManagement();
   
   // 启动回合轮换动画（使用重新排序后的玩家列表）
   startTurnRotation(window.currentPlayers || players);

@@ -23,6 +23,22 @@
       <section class="game-table-container">
         <!-- 游戏区域：包含牌桌和玩家 -->
         <div class="game-area">
+          <!-- 游戏状态信息 -->
+          <div class="game-status-bar">
+            <div class="status-item">
+              <span class="status-label">游戏进度:</span>
+              <span class="status-value" id="gameProgress">等待开始</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">当前回合:</span>
+              <span class="status-value" id="currentTurn">-</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">在线人数:</span>
+              <span class="status-value" id="onlineCount">5/5</span>
+            </div>
+          </div>
+          
           <!-- 玩家环形分布（牌桌外围） -->
           <div class="players-circle" id="playersCircle">
             <!-- 玩家将通过 JavaScript 动态生成 -->
