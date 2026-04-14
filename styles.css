@@ -417,6 +417,28 @@ body[data-page="match"] .content {
     0 20px 60px rgba(0, 0, 0, 0.4),
     inset 0 0 100px rgba(0, 0, 0, 0.3);
   z-index: 5;
+  display: flex;
+  align-items: flex-start; /* 顶部对齐 */
+  justify-content: space-between;
+  padding: 120px 50px 0; /* 增加上内边距使整体更居中 */
+}
+
+/* 中央装饰背景（不阻挡点击） */
+.table-center-decoration {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none; /* 不阻挡鼠标事件 */
+  opacity: 0.3; /* 半透明，作为背景装饰 */
+  z-index: 0;
+}
+
+.table-message {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 1rem;
+  margin: 0;
 }
 
 .table-center {
@@ -433,6 +455,175 @@ body[data-page="match"] .content {
   flex-direction: column;
   align-items: center;
   gap: 12px;
+}
+
+/* 底牌堆样式 */
+.deck-pile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px; /* 减小间距使布局更紧凑 */
+  position: relative;
+  z-index: 10;
+}
+
+.deck-stack {
+  position: relative;
+  width: 90px;
+  height: 120px;
+}
+
+.deck-card {
+  position: absolute;
+  width: 90px;
+  height: 120px;
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #1e40af 100%);
+  border-radius: 8px;
+  border: 3px solid #fff;
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    inset 0 0 20px rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+/* 扑克牌背面图案 */
+.deck-card::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 70px;
+  height: 100px;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.1) 0px,
+    rgba(255, 255, 255, 0.1) 2px,
+    transparent 2px,
+    transparent 8px
+  );
+  border-radius: 4px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+/* 卡牌堆叠效果 - 每层偏移 */
+.deck-stack .deck-card:nth-child(1) { transform: translate(0, 0); z-index: 1; }
+.deck-stack .deck-card:nth-child(2) { transform: translate(2px, -2px); z-index: 2; }
+.deck-stack .deck-card:nth-child(3) { transform: translate(4px, -4px); z-index: 3; }
+.deck-stack .deck-card:nth-child(4) { transform: translate(6px, -6px); z-index: 4; }
+.deck-stack .deck-card:nth-child(5) { transform: translate(8px, -8px); z-index: 5; }
+.deck-stack .deck-card:nth-child(n+6) { transform: translate(10px, -10px); z-index: 6; }
+
+.deck-count {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 6px 16px;
+  border-radius: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+
+.deck-number {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #1e40af;
+  display: inline-block;
+  transition: all 0.3s ease;
+}
+
+.deck-number.update {
+  animation: countUpdate 0.4s ease-out;
+}
+
+@keyframes countUpdate {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); color: #ef4444; }
+  100% { transform: scale(1); }
+}
+
+/* 抽牌动画 */
+@keyframes drawCard {
+  0% { 
+    transform: translate(10px, -10px) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(0, -50px) scale(1.1);
+    opacity: 0.8;
+  }
+  100% { 
+    transform: translate(-100px, -150px) scale(0.8);
+    opacity: 0;
+  }
+}
+
+.deck-card.drawing {
+  animation: drawCard 0.6s ease-out forwards;
+}
+
+/* 8种牌型卡通图案样式 */
+.card-type-badge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+}
+
+/* 炸弹 - 红色 */
+.card-type-badge.bomb { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+/* 洛阳铲 - 棕色 */
+.card-type-badge.shovel { background: linear-gradient(135deg, #92400e 0%, #78350f 100%); }
+/* 明察秋毫 - 蓝色 */
+.card-type-badge.clear-sight { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+/* 顺手牵羊 - 绿色 */
+.card-type-badge.steal { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+/* 回马枪 - 橙色 */
+.card-type-badge.counter-attack { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+/* 休养生息 - 紫色 */
+.card-type-badge.recover { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); }
+/* 偷梁换柱 - 青色 */
+.card-type-badge.swap { background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); }
+/* 栽赃嫁祸 - 粉色 */
+.card-type-badge.frame { background: linear-gradient(135deg, #ec4899 0%, #db2777 100%); }
+
+/* 牌型展示区域 */
+.card-type-display {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.card-type-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.card-type-icon:hover {
+  transform: scale(1.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
 .card-deck {
@@ -452,6 +643,108 @@ body[data-page="match"] .content {
   font-weight: 600;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
   margin: 0;
+}
+
+/* 出牌公示区（Issue #11） */
+.play-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  min-height: 110px;
+  width: 130px;
+  z-index: 10;
+}
+
+.played-cards-container {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  min-height: 90px;
+}
+
+.played-card {
+  position: relative;
+  width: 60px;
+  height: 90px;
+  background: linear-gradient(135deg, #fff 0%, #f0f0f0 100%);
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  animation: playCardFly 0.6s ease-out;
+  transition: all 0.3s ease;
+  gap: 2px;
+  padding: 4px;
+}
+
+.played-card .card-icon {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.played-card .card-name {
+  font-size: 0.6rem;
+  color: #666;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.played-card.latest {
+  transform: scale(1.1);
+  border-color: #fbbf24;
+  box-shadow: 0 0 12px rgba(251, 191, 36, 0.6);
+  z-index: 10;
+}
+
+.played-card.special-effect {
+  animation: playCardFly 0.6s ease-out, specialPulse 1s ease-in-out infinite;
+}
+
+@keyframes playCardFly {
+  0% {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.5) rotate(-10deg);
+  }
+  60% {
+    transform: translateY(5px) scale(1.1) rotate(2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+}
+
+@keyframes specialPulse {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(251, 191, 36, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(251, 191, 36, 0.9), 0 0 30px rgba(239, 68, 68, 0.4);
+  }
+}
+
+.last-play-info {
+  display: none; /* 隐藏出牌玩家信息 */
+}
+
+.last-play-info .player-avatar-small {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #fff;
 }
 
 .players-circle {
@@ -644,16 +937,41 @@ body[data-page="match"] .content {
   background: linear-gradient(135deg, #fff 0%, #f0f0f0 100%);
   border: 2px solid #ddd;
   border-radius: 8px;
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   font-size: 2rem;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
   cursor: pointer;
+  gap: 2px;
+  padding: 4px;
+}
+
+.hand-card .card-icon {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.hand-card .card-name {
+  font-size: 0.6rem;
+  color: #666;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .hand-card:hover {
   transform: translateY(-8px) rotate(-5deg);
+}
+
+.hand-card.selected {
+  border-color: #3b82f6;
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.6);
+  transform: translateY(-12px);
 }
 
 .hand-card.dealt {
@@ -663,10 +981,10 @@ body[data-page="match"] .content {
 @keyframes dealCard {
   0% {
     opacity: 0;
-    transform: translateY(-50px) rotate(-10deg) scale(0.8);
+    transform: translateY(-250px) rotate(-10deg) scale(0.8);
   }
   60% {
-    transform: translateY(5px) rotate(2deg) scale(1.05);
+    transform: translateY(10px) rotate(2deg) scale(1.05);
   }
   100% {
     opacity: 1;
@@ -926,5 +1244,42 @@ body[data-page="match"] .content {
     min-width: 100px;
     padding: 0 16px;
     font-size: 0.9rem;
+  }
+  
+  /* Issue #8: 底牌堆移动端适配 */
+  .deck-stack {
+    width: 70px;
+    height: 95px;
+  }
+  
+  .deck-card {
+    width: 70px;
+    height: 95px;
+  }
+  
+  .deck-card::before {
+    width: 54px;
+    height: 78px;
+  }
+  
+  .deck-number {
+    font-size: 1.4rem;
+  }
+  
+  .card-type-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 1rem;
+  }
+  
+  /* 牌桌布局移动端适配 */
+  .game-table {
+    padding: 110px 40px 0; /* 保持顶部对齐并居中 */
+    width: 400px;
+    height: 400px;
+  }
+  
+  .deck-pile, .play-area {
+    transform: scale(0.9);
   }
 }

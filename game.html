@@ -46,11 +46,20 @@
           
           <!-- 牌桌区域（居中） -->
           <div class="game-table">
-            <!-- 牌桌中央区域 -->
-            <div class="table-center">
-              <div class="deck-area">
-                <div class="card-deck">🎴</div>
-                <p class="table-message">游戏进行中...</p>
+            <!-- 底牌堆区域（左侧） -->
+            <div class="deck-pile" id="deckPile">
+              <div class="deck-stack" id="deckStack">
+                <!-- 卡牌堆叠将通过 JavaScript 动态生成 -->
+              </div>
+              <div class="deck-count" id="deckCount">
+                <span class="deck-number">28</span>
+              </div>
+            </div>
+            
+            <!-- 出牌公示区（右侧，Issue #11） -->
+            <div class="play-area" id="playArea">
+              <div class="played-cards-container" id="playedCardsContainer">
+                <!-- 已打出的牌将在这里显示 -->
               </div>
             </div>
           </div>
