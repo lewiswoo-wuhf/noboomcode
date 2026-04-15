@@ -20,12 +20,10 @@ body {
   min-height: 100vh;
   background-color: #fff1f0;
   background-image:
-    url('background-festival.svg'),
     radial-gradient(circle at top left, rgba(255, 255, 255, 0.9), transparent 24%),
     linear-gradient(180deg, #fff1f0 0%, #ffe3dc 42%, #ffebe3 100%);
   background-repeat: no-repeat;
   background-position: top center;
-  background-size: 1100px auto;
   line-height: 1.6;
 }
 
@@ -397,6 +395,21 @@ body[data-page="match"] .content {
   font-weight: 500;
 }
 
+.countdown-timer {
+  color: #ef4444;
+  font-weight: 800;
+  transition: all 0.3s ease;
+}
+
+.countdown-timer.warning {
+  animation: pulseRed 1s infinite;
+}
+
+@keyframes pulseRed {
+  0%, 100% { transform: scale(1); color: #ef4444; }
+  50% { transform: scale(1.2); color: #dc2626; }
+}
+
 .status-value {
   color: #1f2937;
   font-weight: 700;
@@ -671,7 +684,7 @@ body[data-page="match"] .content {
 .played-card {
   position: relative;
   width: 60px;
-  height: 90px;
+  height: 95px; /* 稍微增加高度以容纳间距 */
   background: linear-gradient(135deg, #fff 0%, #f0f0f0 100%);
   border: 2px solid #ddd;
   border-radius: 8px;
@@ -683,8 +696,8 @@ body[data-page="match"] .content {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   animation: playCardFly 0.6s ease-out;
   transition: all 0.3s ease;
-  gap: 2px;
-  padding: 4px;
+  gap: 4px; /* 增加图标和文字的默认间距 */
+  padding: 6px;
 }
 
 .played-card .card-icon {
@@ -696,6 +709,7 @@ body[data-page="match"] .content {
   font-size: 0.6rem;
   color: #666;
   line-height: 1;
+  margin-top: 4px; /* 增加图标和文字的间隔 */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -734,6 +748,12 @@ body[data-page="match"] .content {
   50% {
     box-shadow: 0 0 20px rgba(251, 191, 36, 0.9), 0 0 30px rgba(239, 68, 68, 0.4);
   }
+}
+
+@keyframes highlightPop {
+  0% { transform: scale(1); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1); }
+  50% { transform: scale(1.05); box-shadow: 0 0 30px rgba(251, 191, 36, 0.8); }
+  100% { transform: scale(1); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1); }
 }
 
 .last-play-info {
@@ -933,7 +953,7 @@ body[data-page="match"] .content {
 
 .hand-card {
   width: 60px;
-  height: 90px;
+  height: 95px; /* 稍微增加高度以容纳间距 */
   background: linear-gradient(135deg, #fff 0%, #f0f0f0 100%);
   border: 2px solid #ddd;
   border-radius: 8px;
@@ -945,8 +965,8 @@ body[data-page="match"] .content {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
   cursor: pointer;
-  gap: 2px;
-  padding: 4px;
+  gap: 4px; /* 增加图标和文字的默认间距 */
+  padding: 6px;
 }
 
 .hand-card .card-icon {
@@ -958,6 +978,7 @@ body[data-page="match"] .content {
   font-size: 0.6rem;
   color: #666;
   line-height: 1;
+  margin-top: 4px; /* 增加图标和文字的间隔 */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1026,6 +1047,48 @@ body[data-page="match"] .content {
   min-width: 120px;
   width: auto;
   padding: 0 24px;
+}
+
+.action-btn.auto-active {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #fff;
+  animation: autoPulse 2s infinite;
+}
+
+/* 托管状态标签（Issue #15：改为 Label 形式） */
+.auto-play-label {
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #fff;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+  animation: autoPulse 2s infinite;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* 头像上的小型托管标签 */
+.auto-play-label-mini {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  padding: 2px 6px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #fff;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.6rem;
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.4);
+  animation: autoPulse 2s infinite;
+  white-space: nowrap;
+  z-index: 20;
+}
+
+@keyframes autoPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); }
 }
 
 .action-group {

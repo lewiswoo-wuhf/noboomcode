@@ -380,6 +380,12 @@ function renderRoomPlayers(players) {
 
 // ========== Game State Management (Issue #7) ==========
 
+// 托管状态管理（Issues #13, #14, #15）
+let isAutoPlay = false; // 是否处于托管状态
+let turnTimer = null; // 回合倒计时定时器
+const TURN_DURATION = 5; // 每回合5秒（Issue #13：调整为5秒）
+let pendingManualResume = false; // 标记是否需要在下一轮恢复手动操作（Issue #15）
+
 // 8种牌型定义（Issue #8）
 const CARD_TYPES = {
   BOMB: { id: 'bomb', name: '炸弹', icon: '💣', color: 'bomb' },
@@ -693,6 +699,7 @@ function renderGameTable(players) {
           <img class="player-avatar" src="${escapeHtml(player.avatar)}" alt="${escapeHtml(player.name)} 的头像" />
           ${!player.self ? `<div class="hand-count-badge">${cardCount}</div>` : ''}
           <div class="online-status ${player.online ? 'online' : 'offline'}"></div>
+          <div class="auto-play-label-mini hidden" id="autoPlayLabel-${index}">托管中</div>
         </div>
         <div class="player-name-tag">${escapeHtml(player.name)}</div>
         ${!player.online ? '<div class="offline-tag">离线</div>' : ''}
@@ -740,6 +747,12 @@ function updateTurnIndicator(currentPlayerIndex, players) {
     currentTurnEl.textContent = players[currentPlayerIndex].name;
   }
   
+  // 重置并启动倒计时（Issue #13）
+  resetTurnCountdown();
+  
+  // 检查是否需要从托管切换回手动（Issue #15）
+  checkManualResume();
+  
   // 更新按钮可用状态（Issue #9 & #10）
   const drawCardBtn = document.getElementById('drawCardBtn');
   const playCardBtn = document.getElementById('playCardBtn');
@@ -756,6 +769,111 @@ function updateTurnIndicator(currentPlayerIndex, players) {
   }
 }
 
+// 重置回合倒计时（Issue #13）
+function resetTurnCountdown() {
+  clearInterval(turnTimer);
+  let seconds = TURN_DURATION;
+  const countdownEl = document.getElementById('turnCountdown');
+  if (countdownEl) {
+    countdownEl.textContent = seconds;
+    countdownEl.classList.remove('warning');
+  }
+  
+  turnTimer = setInterval(() => {
+    seconds--;
+    if (countdownEl) {
+      countdownEl.textContent = seconds;
+      if (seconds <= 5) {
+        countdownEl.classList.add('warning');
+      } else {
+        countdownEl.classList.remove('warning');
+      }
+    }
+    
+    if (seconds <= 0) {
+      clearInterval(turnTimer);
+      handleTurnTimeout(); // 超时处理（Issue #14）
+    }
+  }, 1000);
+}
+
+// 强制刷新倒计时显示
+function refreshCountdownDisplay() {
+  const countdownEl = document.getElementById('turnCountdown');
+  if (countdownEl) {
+    countdownEl.textContent = TURN_DURATION;
+    countdownEl.classList.remove('warning');
+    console.log(`⏱️ 倒计时已重置为: ${TURN_DURATION} 秒`);
+  } else {
+    console.warn('⚠️ 找不到 turnCountdown 元素');
+  }
+}
+
+// 处理回合超时（Issue #14）
+function handleTurnTimeout() {
+  console.log('⏰ 回合超时，进入托管模式');
+  if (!isAutoPlay) {
+    toggleAutoPlay(true); // 自动开启托管
+  }
+  
+  // 执行自动操作
+  performAutoAction();
+}
+
+// 执行自动操作（Issue #14）
+function performAutoAction() {
+  const handCards = document.getElementById('handCards');
+  const drawCardBtn = document.getElementById('drawCardBtn');
+  
+  if (!handCards || !drawCardBtn) return;
+  
+  // 简单策略：优先出牌，无牌可出则抓牌
+  if (handCards.children.length > 0) {
+    // 随机选一张出
+    const cards = Array.from(handCards.children);
+    const randomCard = cards[Math.floor(Math.random() * cards.length)];
+    randomCard.click(); // 选中
+    setTimeout(() => {
+      const playBtn = document.getElementById('playCardBtn');
+      if (playBtn && !playBtn.disabled) {
+        playBtn.click();
+      }
+    }, 500);
+  } else if (!drawCardBtn.disabled && deckCount > 0) {
+    drawCardBtn.click();
+  }
+}
+
+// 推进回合（模拟服务器逻辑）
+function advanceTurn() {
+  const indicator = document.getElementById('turnIndicator');
+  if (!indicator) return;
+  
+  // 获取当前玩家索引
+  const currentTurnEl = document.getElementById('currentTurn');
+  if (!currentTurnEl) return;
+  
+  const players = window.currentPlayers;
+  if (!players) return;
+  
+  const currentPlayerName = currentTurnEl.textContent;
+  const currentIndex = players.findIndex(p => p.name === currentPlayerName);
+  
+  if (currentIndex !== -1) {
+    const nextIndex = (currentIndex + 1) % players.length;
+    updateTurnIndicator(nextIndex, players);
+    
+    // 清除旧的定时器并启动新的
+    if (window.turnIntervalId) {
+      clearInterval(window.turnIntervalId);
+    }
+    
+    // 重新启动轮换（但这次我们只用来更新 UI，实际切换由 advanceTurn 控制）
+    // 为了防止重复计时，我们这里不直接调用 startTurnRotation，而是手动触发一次 UI 更新
+    // 真正的计时器在 updateTurnIndicator 里的 resetTurnCountdown 已经启动了
+  }
+}
+
 function startTurnRotation(players) {
   let currentIndex = 0;
   
@@ -765,11 +883,11 @@ function startTurnRotation(players) {
   // 初始显示
   updateTurnIndicator(currentIndex, displayPlayers);
   
-  // 每3秒轮换一次
+  // 每3秒轮换一次（模拟回合结束，实际应由服务器控制）
   const turnInterval = setInterval(() => {
     currentIndex = (currentIndex + 1) % displayPlayers.length;
     updateTurnIndicator(currentIndex, displayPlayers);
-  }, 3000);
+  }, 15000); // 改为15秒，与倒计时同步
   
   // 暴露 interval ID 以便清理（如果需要）
   window.turnIntervalId = turnInterval;
@@ -883,6 +1001,14 @@ function initHandArea() {
       });
       
       playCardBtn.disabled = false;
+      
+      // 抓牌后禁用出牌按钮（本回合只能二选一，抓牌后回合结束）
+      drawCardBtn.disabled = true;
+      
+      // 抓牌后自动结束回合（Issue #13：每轮只能二选一）
+      setTimeout(() => {
+        advanceTurn();
+      }, 1000);
     } else {
       alert('底牌堆已空，无法抽牌！');
       drawCardBtn.disabled = true;
@@ -930,11 +1056,14 @@ function initHandArea() {
       // 清除选中状态
       handCards.querySelectorAll('.hand-card').forEach(c => c.classList.remove('selected'));
       
-      // 如果没有牌了，禁用出牌按钮
-      if (handCards.children.length === 0) {
-        playCardBtn.disabled = true;
-        // drawCardBtn.disabled = true; // 没手牌了也禁用抽牌（或者保持开启看需求，这里先禁用）
-      }
+      // 出牌后禁用按钮并结束回合
+      playCardBtn.disabled = true;
+      drawCardBtn.disabled = true; // 出牌后本回合不能再抓牌
+      
+      // 出牌后自动结束回合（Issue #13：每轮只能二选一）
+      setTimeout(() => {
+        advanceTurn();
+      }, 1000);
     }, 500);
   });
 }
@@ -990,9 +1119,8 @@ function initPlayArea() {
 
 function addPlayedCard(card, playerInfo) {
   const container = document.getElementById('playedCardsContainer');
-  const lastPlayInfo = document.getElementById('lastPlayInfo');
   
-  if (!container || !lastPlayInfo) return;
+  if (!container) return;
   
   // 添加到记录
   playedCards.push({ card, player: playerInfo, timestamp: Date.now() });
@@ -1002,9 +1130,6 @@ function addPlayedCard(card, playerInfo) {
   
   // 渲染
   renderPlayedCards();
-  
-  // 更新最后出牌信息
-  updateLastPlayInfo(playerInfo);
 }
 
 function renderPlayedCards() {
@@ -1076,9 +1201,87 @@ function initLeaveRoom() {
   });
 }
 
+// 初始化托管功能（Issues #14, #15）
+function initAutoPlay() {
+  // 页面任意点击退出托管（Issue #15）
+  document.addEventListener('click', handleExitAutoPlay);
+}
+
+// 切换托管状态（Issue #15）
+function toggleAutoPlay(enable) {
+  isAutoPlay = enable;
+  
+  // 找到当前玩家的索引
+  const players = window.currentPlayers;
+  if (!players) return;
+  
+  const selfPlayerIndex = players.findIndex(p => p.self);
+  if (selfPlayerIndex === -1) return;
+  
+  // 更新当前玩家头像上的标签
+  const autoPlayLabel = document.getElementById(`autoPlayLabel-${selfPlayerIndex}`);
+  const handArea = document.getElementById('handArea');
+  
+  if (autoPlayLabel) {
+    if (isAutoPlay) {
+      autoPlayLabel.classList.remove('hidden');
+    } else {
+      autoPlayLabel.classList.add('hidden');
+    }
+  }
+  
+  // 更新手牌区样式提示（Issue #15）
+  if (handArea) {
+    if (isAutoPlay) {
+      handArea.style.opacity = '0.6';
+      handArea.style.pointerEvents = 'none'; // 托管时禁止手动操作
+    } else {
+      handArea.style.opacity = '1';
+      handArea.style.pointerEvents = 'auto';
+    }
+  }
+  
+  console.log(`🤖 托管状态: ${isAutoPlay ? '开启' : '关闭'}`);
+}
+
+// 处理退出托管（Issue #15）
+function handleExitAutoPlay(event) {
+  if (!isAutoPlay) return;
+  
+  // 任意点击都标记为“请求在下一轮恢复手动”
+  pendingManualResume = true;
+  console.log('👆 检测到手动操作，将在下一轮恢复手操');
+  
+  // UI 立即给出反馈，但逻辑上等到下一轮才真正解除 isAutoPlay
+  const handArea = document.getElementById('handArea');
+  if (handArea) {
+    handArea.style.animation = 'none';
+    setTimeout(() => {
+      handArea.style.animation = 'highlightPop 0.6s ease-out';
+    }, 10);
+  }
+}
+
+// 回合开始时检查是否需要恢复手动（Issue #15）
+function checkManualResume() {
+  if (pendingManualResume) {
+    toggleAutoPlay(false);
+    pendingManualResume = false;
+    console.log('✅ 已恢复手动操作模式');
+  }
+}
+
 function initGame() {
   const user = getStoredUser();
   renderUserBadge(user);
+
+  // 清理上一局的残留数据（Issue #3：重新匹配后底牌重置）
+  localStorage.removeItem('deckCount');
+  localStorage.removeItem('playedCards');
+  deckCount = 28; // 重置全局变量
+  playedCards = [];
+  isAutoPlay = false; // 重置托管状态
+  pendingManualResume = false; // 重置手动恢复标记
 
   let players = getStoredMatch();
   if (!players || players.length < MATCH_TARGET) {
@@ -1110,11 +1313,50 @@ function initGame() {
   // 初始化离开房间按钮
   initLeaveRoom();
   
+  // 初始化托管功能（Issues #14, #15）
+  initAutoPlay();
+  
   // 初始化游戏状态管理
   initGameStateManagement();
   
   // 启动回合轮换动画（使用重新排序后的玩家列表）
   startTurnRotation(window.currentPlayers || players);
+  
+  // 确保托管标签初始状态正确
+  const currentPlayerList = window.currentPlayers || players;
+  if (currentPlayerList) {
+    const selfPlayerIndex = currentPlayerList.findIndex(p => p.self);
+    if (selfPlayerIndex !== -1) {
+      const autoPlayLabel = document.getElementById(`autoPlayLabel-${selfPlayerIndex}`);
+      if (autoPlayLabel) {
+        if (!isAutoPlay) {
+          autoPlayLabel.classList.add('hidden');
+          console.log('🏷️ 托管标签已隐藏');
+        } else {
+          autoPlayLabel.classList.remove('hidden');
+          console.log('🏷️ 托管标签已显示');
+        }
+      }
+    }
+  }
+  
+  // 强制刷新倒计时显示，确保显示为 5 秒
+  refreshCountdownDisplay();
+  
+  // 调试：检查 DOM 元素是否存在
+  console.log('🔍 DOM 检查:');
+  console.log('- turnCountdown:', document.getElementById('turnCountdown'));
+  console.log('- autoPlayLabel:', document.getElementById('autoPlayLabel'));
+  console.log('- playedCardsContainer:', document.getElementById('playedCardsContainer'));
+  
+  // 强制刷新一次出牌区显示
+  renderPlayedCards();
+  
+  // 调试：检查手牌区和按钮状态
+  console.log('🃏 游戏元素状态:');
+  console.log('- handArea:', document.getElementById('handArea'));
+  console.log('- drawCardBtn (disabled):', document.getElementById('drawCardBtn')?.disabled);
+  console.log('- playCardBtn (disabled):', document.getElementById('playCardBtn')?.disabled);
   
   // ========== 测试功能：在控制台暴露函数 ==========
   // 使用方法：在浏览器控制台输入 testUpdateHandCount(0, 7) 来更新玩家0的手牌数为7
@@ -1131,6 +1373,10 @@ function initGame() {
   console.log('   例如: testUpdateHandCount(1, 5) - 将玩家1的手牌数更新为5');
   console.log('💡 提示: 自己的头像在底部，与手牌相邻');
   console.log('🃏 测试出牌: testAddPlayedCard("💣", "炸弹")');
+  
+  // 调试信息：确认倒计时和托管状态
+  console.log(`⏱️ 当前倒计时设置: ${TURN_DURATION} 秒`);
+  console.log(`🤖 初始托管状态: ${isAutoPlay}`);
 }
 
 function initPage() {
