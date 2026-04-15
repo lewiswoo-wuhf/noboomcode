@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>游戏房间 - 不要抽到炸弹</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=3" />
 </head>
 <body data-page="game">
   <div class="page-shell">
@@ -26,12 +26,12 @@
           <!-- 游戏状态信息 -->
           <div class="game-status-bar">
             <div class="status-item">
-              <span class="status-label">游戏进度:</span>
-              <span class="status-value" id="gameProgress">等待开始</span>
-            </div>
-            <div class="status-item">
               <span class="status-label">当前回合:</span>
               <span class="status-value" id="currentTurn">-</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">倒计时:</span>
+              <span class="status-value countdown-timer" id="turnCountdown">5</span>
             </div>
             <div class="status-item">
               <span class="status-label">在线人数:</span>
@@ -89,6 +89,6 @@
     </main>
   </div>
 
-  <script src="main.js"></script>
+  <script src="main.js?v=3"></script>
 </body>
 </html>
