@@ -568,7 +568,8 @@ function initGameStateManagement() {
   
   // 监听网络状态变化
   window.addEventListener('online', handleOnlineStatus);
-  window.addEventListener('offline', handleOfflineStatus);
+  // 移除离线/断线相关逻辑 (Issue #24)
+  // window.addEventListener('offline', handleOfflineStatus);
   
   console.log('🎮 游戏状态管理已初始化');
 }
@@ -719,12 +720,10 @@ function renderGameTable(players) {
         <div class="player-avatar-wrapper">
           <img class="player-avatar" src="${escapeHtml(player.avatar)}" alt="${escapeHtml(player.name)} 的头像" />
           ${!player.self ? `<div class="hand-count-badge">${cardCount}</div>` : ''}
-          <div class="online-status ${player.online ? 'online' : 'offline'}"></div>
           <div class="auto-play-label-mini hidden" id="autoPlayLabel-${index}">托管中</div>
           ${player.isBot ? '<div class="bot-tag">Bot</div>' : ''}
         </div>
         <div class="player-name-tag">${escapeHtml(player.name)}</div>
-        ${!player.online ? '<div class="offline-tag">离线</div>' : ''}
       </div>
     `;
   }).join('');
@@ -850,30 +849,21 @@ function handleTurnTimeout() {
   const currentPlayerName = currentTurnEl.textContent;
   const currentPlayer = players.find(p => p.name === currentPlayerName);
   
-  // 如果是 Bot 超时，先显示托管标签，然后立即执行动作 (Issue #17)
+  // 如果是 Bot 超时，显示托管标签并等待 (Issue #24)
   if (currentPlayer && currentPlayer.isBot) {
-    console.log(`🤖 Bot ${currentPlayer.name} 超时，进入托管并执行动作`);
-    // 在 UI 上显示该 Bot 的托管状态
+    console.log(`🤖 Bot ${currentPlayer.name} 超时，显示托管状态`);
     const botIndex = players.findIndex(p => p.name === currentPlayerName);
     if (botIndex !== -1) {
       const botLabel = document.getElementById(`autoPlayLabel-${botIndex}`);
       if (botLabel) botLabel.classList.remove('hidden');
     }
-    
-    // 延迟一点点再执行，让 UI 有机会渲染出托管标签
-    setTimeout(() => {
-      performBotAction();
-    }, 500);
-    return;
+    return; // Issue #24: 不自动执行动作，直接等待
   }
   
-  // 如果是真人超时，进入托管模式
+  // 如果是真人超时，仅显示托管标签 (Issue #24)
   if (!isAutoPlay) {
-    toggleAutoPlay(true); // 自动开启托管
+    toggleAutoPlay(true); // 开启托管状态显示
   }
-  
-  // 执行自动操作
-  performAutoAction();
 }
 
 // 强制触发超时处理（用于调试或页面恢复后卡死的情况）
@@ -1496,15 +1486,15 @@ function toggleAutoPlay(enable) {
   console.log(`🤖 托管状态: ${isAutoPlay ? '开启' : '关闭'}`);
 }
 
-// 处理退出托管（Issue #15）
+// 处理退出托管（Issue #15 & #24）
 function handleExitAutoPlay(event) {
   if (!isAutoPlay) return;
   
-  // 任意点击都标记为“请求在下一轮恢复手动”
-  pendingManualResume = true;
-  console.log('👆 检测到手动操作，将在下一轮恢复手操');
+  // Issue #24: 任意点击操作立即恢复到手操状态
+  toggleAutoPlay(false);
+  console.log('👆 检测到手动操作，已立即恢复手操模式');
   
-  // UI 立即给出反馈，但逻辑上等到下一轮才真正解除 isAutoPlay
+  // UI 立即给出反馈
   const handArea = document.getElementById('handArea');
   if (handArea) {
     handArea.style.animation = 'none';
