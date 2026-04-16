@@ -1022,7 +1022,7 @@ body[data-page="match"] .content {
 .hand-card.selected {
   border-color: #3b82f6;
   box-shadow: 0 0 15px rgba(59, 130, 246, 0.7);
-  transform: translateY(-20px); /* Issue #21: 向上浮动更明显 */
+  transform: translateY(-20px) !important; /* Issue #21: 强制上浮，覆盖 hover 或动画残留 */
   z-index: 10; /* 确保选中的牌在其他牌之上 */
 }
 
