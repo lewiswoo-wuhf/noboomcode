@@ -1021,8 +1021,9 @@ body[data-page="match"] .content {
 
 .hand-card.selected {
   border-color: #3b82f6;
-  box-shadow: 0 0 12px rgba(59, 130, 246, 0.6);
-  transform: translateY(-12px);
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.7);
+  transform: translateY(-20px); /* Issue #21: 向上浮动更明显 */
+  z-index: 10; /* 确保选中的牌在其他牌之上 */
 }
 
 .hand-card.dealt {
