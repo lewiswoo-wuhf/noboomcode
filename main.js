@@ -1037,59 +1037,81 @@ function startTurnRotation(players) {
 function generateInitialCards() {
   console.log('🎴 [Issue #20] 开始生成初始牌组...');
   
-  // 1. 生成自己的手牌（5张）
-  const myHand = [];
-  
-  // 规则1：必然含有1张洛阳铲
-  myHand.push(CARD_TYPES.SHOVEL);
-  
-  // 规则2：不含炸弹，其他4张随机（从非炸弹、非洛阳铲的牌型中选，或者允许重复洛阳铲？通常“其他牌随机若干”指剩余位置）
-  // 为简单起见，从除了 BOMB 以外的牌型中随机选4张
-  const availableForHand = Object.values(CARD_TYPES).filter(t => t.id !== 'bomb');
-  for (let i = 0; i < 4; i++) {
-    const randomCard = availableForHand[Math.floor(Math.random() * availableForHand.length)];
-    myHand.push(randomCard);
+  const playerCount = MATCH_TARGET; // 5名玩家
+  const handSize = 5;
+  const deckSize = 28;
+  const totalSwapLimit = 4;
+  const bombInDeck = 4;
+
+  // 1. 初始化所有玩家的空手牌
+  const allHands = [];
+  for (let i = 0; i < playerCount; i++) {
+    allHands.push([]);
   }
-  
-  // 2. 生成底牌堆（28张）
+
+  // 规则1：每个玩家必然含有1张洛阳铲
+  for (let i = 0; i < playerCount; i++) {
+    allHands[i].push(CARD_TYPES.SHOVEL);
+  }
+
+  // 填充剩余手牌位置（不含炸弹）
+  const availableForHand = Object.values(CARD_TYPES).filter(t => t.id !== 'bomb');
+  for (let i = 0; i < playerCount; i++) {
+    while (allHands[i].length < handSize) {
+      const randomCard = availableForHand[Math.floor(Math.random() * availableForHand.length)];
+      allHands[i].push(randomCard);
+    }
+  }
+
+  // 2. 生成底牌堆
   const deck = [];
   
   // 规则3：底牌中的炸弹牌为4张
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < bombInDeck; i++) {
     deck.push(CARD_TYPES.BOMB);
   }
-  
-  // 计算当前全场 SWAP 数量
-  const mySwapCount = myHand.filter(c => c.id === 'swap').length;
-  // 规则2：全场 SWAP 总数为 4 张。目前 myHand 可能有，deck 还没有。
-  // 我们需要在 deck 中补充 SWAP，使得 myHand + deck 的 SWAP 总数为 4。
-  // 注意：这里只模拟了“我”的手牌和底牌。其他玩家手牌暂时假设为0或忽略，
-  // 为了严格满足“初始手牌+底牌”总数，我们假设其他玩家手牌中 SWAP 数量为 0（或者我们在底牌中直接补足剩余）。
-  // 根据需求：“初始手牌+初始底牌中的偷梁换柱牌总数为4张”。
-  // 由于我们只初始化了“我”的手牌，我们就保证 我手牌中的SWAP + 底牌中的SWAP = 4。
-  const remainingSwap = 4 - mySwapCount;
+
+  // 规则2：全场 SWAP 总数为 4 张。先统计手牌中已有的 SWAP。
+  let currentSwapCount = 0;
+  allHands.forEach(hand => {
+    currentSwapCount += hand.filter(c => c.id === 'swap').length;
+  });
+
+  // 在底牌中补足剩余的 SWAP，确保总数为 4
+  const remainingSwap = Math.max(0, totalSwapLimit - currentSwapCount);
   for (let i = 0; i < remainingSwap; i++) {
     deck.push(CARD_TYPES.SWAP);
   }
-  
-  // 填充底牌剩余位置（28 - 4炸弹 - remainingSwap）
-  const remainingDeckSlots = 28 - 4 - remainingSwap;
+
+  // 填充底牌剩余位置
+  const remainingDeckSlots = deckSize - bombInDeck - remainingSwap;
   const fillTypes = Object.values(CARD_TYPES).filter(t => t.id !== 'bomb' && t.id !== 'swap');
   for (let i = 0; i < remainingDeckSlots; i++) {
     const randomCard = fillTypes[Math.floor(Math.random() * fillTypes.length)];
     deck.push(randomCard);
   }
-  
-  // 3. 统计日志
+
+  // 3. 统计日志（Issue #20：测试时显示各类牌的数量）
+  const myHand = allHands[0]; // 假设自己是第一个玩家
   const allCards = [...myHand, ...deck];
   const stats = {};
-  Object.values(CARD_TYPES).forEach(type => {
-    stats[type.name] = allCards.filter(c => c.id === type.id).length;
-  });
   
-  console.log('📊 [Issue #20] 全场牌型统计:', stats);
-  console.log('🃏 [Issue #20] 我的手牌:', myHand.map(c => c.name));
-  console.log('🗂️ [Issue #20] 底牌堆数量:', deck.length);
+  console.group('🎴 [Issue #20] 初始发牌统计报告');
+  console.log('🃏 我的手牌详情:', myHand.map(c => c.name));
+  console.log('🗂️ 底牌堆总数量:', deck.length);
+  console.log('👥 玩家总数:', playerCount);
+  console.log('🔄 偷梁换柱总数限制:', totalSwapLimit);
+  
+  // 统计所有牌（包括所有玩家的手牌和底牌）
+  const globalAllCards = [...deck];
+  allHands.forEach(h => globalAllCards.push(...h));
+  
+  Object.values(CARD_TYPES).forEach(type => {
+    const count = globalAllCards.filter(c => c.id === type.id).length;
+    stats[type.name] = count;
+    console.log(`   - ${type.name}: ${count} 张`);
+  });
+  console.groupEnd();
   
   return {
     myCards: myHand,
