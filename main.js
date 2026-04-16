@@ -981,6 +981,12 @@ function advanceTurn() {
   const indicator = document.getElementById('turnIndicator');
   if (!indicator) return;
   
+  // Issue #21-6: 在回合切换的瞬间，先强制禁用所有操作按钮，防止手速过快导致的误触
+  const drawCardBtn = document.getElementById('drawCardBtn');
+  const playCardBtn = document.getElementById('playCardBtn');
+  if (drawCardBtn) drawCardBtn.disabled = true;
+  if (playCardBtn) playCardBtn.disabled = true;
+  
   // 获取当前玩家索引
   const currentTurnEl = document.getElementById('currentTurn');
   if (!currentTurnEl) return;
@@ -1179,10 +1185,14 @@ function initHandArea(predefinedCards = null) {
   drawCardBtn.disabled = true; // 初始禁用，等待回合开始
   playCardBtn.disabled = true; // Issue #21: 初始时不能点击出牌按钮
   
-  // 更新出牌按钮状态的辅助函数 (Issue #21)
+  // 更新出牌按钮状态的辅助函数 (Issue #21 & #24)
   const updatePlayButtonState = () => {
     const hasSelected = handCards.querySelector('.hand-card.selected') !== null;
-    playCardBtn.disabled = !hasSelected;
+    // 关键修复：只有当按钮当前已经是启用状态时（即轮到自己），选中卡牌才有效
+    // 如果按钮是禁用的（非自己回合），则保持禁用，绝不反向开启
+    if (!playCardBtn.disabled) {
+        playCardBtn.disabled = !hasSelected;
+    }
   };
   
   // 抽牌按钮事件
@@ -1254,9 +1264,9 @@ function initHandArea(predefinedCards = null) {
   
   // 出牌按钮事件
   playCardBtn.addEventListener('click', () => {
+    // Issue #21-6: 回合限制，非自己回合禁止操作
     if (playCardBtn.disabled) {
-      alert('现在不是你的回合，无法出牌！');
-      return;
+      return; // 静默返回，不弹窗打扰用户
     }
     
     const cards = handCards.querySelectorAll('.hand-card');
@@ -1282,6 +1292,7 @@ function initHandArea(predefinedCards = null) {
     const cardType = cardToPlay.dataset.cardType || '';
     
     // 播放出牌动画
+    cardToPlay.classList.remove('selected'); // Issue #21: 出牌前先取消选中，让动画从原位开始
     cardToPlay.style.animation = 'playCard 0.5s ease-out forwards';
     
     setTimeout(() => {
