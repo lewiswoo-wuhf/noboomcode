@@ -790,7 +790,9 @@ function updateTurnIndicator(currentPlayerIndex, players) {
   }
   
   if (playCardBtn) {
-    playCardBtn.disabled = !shouldEnable || (handCards && handCards.children.length === 0); // 没手牌也禁用
+    // Issue #21: 出牌按钮初始禁用，只有选中牌后才启用
+    const hasSelected = handCards && handCards.querySelector('.hand-card.selected');
+    playCardBtn.disabled = !shouldEnable || (handCards && handCards.children.length === 0) || !hasSelected;
   }
 }
 
@@ -1164,13 +1166,20 @@ function initHandArea(predefinedCards = null) {
     cardDiv.title = cardType.name;
     cardDiv.style.animation = `dealCard 0.5s ease-out ${index * 0.1}s both`;
     
-    // 添加点击选中功能（Issue #10）
+    // 添加点击选中功能（Issue #21：交互优化）
     cardDiv.addEventListener('click', () => {
       const isSelected = cardDiv.classList.contains('selected');
-      handCards.querySelectorAll('.hand-card').forEach(c => c.classList.remove('selected'));
-      if (!isSelected) {
+      
+      if (isSelected) {
+        // 4、当用户点击出列的牌时，则该牌又入列，用户此时不可以点击出牌按钮完成出牌
+        cardDiv.classList.remove('selected');
+      } else {
+        // 2 & 3、用户点击一张牌后高亮出列；点击另一张时切换
+        handCards.querySelectorAll('.hand-card').forEach(c => c.classList.remove('selected'));
         cardDiv.classList.add('selected');
       }
+      
+      updatePlayButtonState();
     });
     
     handCards.appendChild(cardDiv);
@@ -1178,7 +1187,13 @@ function initHandArea(predefinedCards = null) {
   
   cardCount.textContent = String(myCards.length);
   drawCardBtn.disabled = true; // 初始禁用，等待回合开始
-  playCardBtn.disabled = true;
+  playCardBtn.disabled = true; // Issue #21: 初始时不能点击出牌按钮
+  
+  // 更新出牌按钮状态的辅助函数 (Issue #21)
+  const updatePlayButtonState = () => {
+    const hasSelected = handCards.querySelector('.hand-card.selected') !== null;
+    playCardBtn.disabled = !hasSelected;
+  };
   
   // 抽牌按钮事件
   drawCardBtn.addEventListener('click', () => {
@@ -1210,17 +1225,18 @@ function initHandArea(predefinedCards = null) {
       
       cardDiv.title = drawnCard.name;
       
-      // 添加点击选中功能（Issue #10）
+      // 添加点击选中功能（Issue #21：交互优化）
       cardDiv.addEventListener('click', () => {
-        // 切换选中状态
         const isSelected = cardDiv.classList.contains('selected');
         
-        // 清除其他牌的选中状态（单选模式）
-        handCards.querySelectorAll('.hand-card').forEach(c => c.classList.remove('selected'));
-        
-        if (!isSelected) {
+        if (isSelected) {
+          cardDiv.classList.remove('selected');
+        } else {
+          handCards.querySelectorAll('.hand-card').forEach(c => c.classList.remove('selected'));
           cardDiv.classList.add('selected');
         }
+        
+        updatePlayButtonState();
       });
       
       cardDiv.style.animation = 'dealCard 0.5s ease-out';
@@ -1230,8 +1246,6 @@ function initHandArea(predefinedCards = null) {
       cardDiv.addEventListener('animationend', () => {
         cardDiv.classList.add('dealt');
       });
-      
-      playCardBtn.disabled = false;
       
       // 抓牌后禁用出牌按钮（本回合只能二选一，抓牌后回合结束）
       drawCardBtn.disabled = true;
@@ -1261,9 +1275,14 @@ function initHandArea(predefinedCards = null) {
       return;
     }
     
-    // 查找选中的牌（Issue #10）
+    // 5、用户点击一张牌后，该牌会高亮出列，出牌按钮可以点击，当点击出牌按钮后，该牌打出
     const selectedCard = handCards.querySelector('.hand-card.selected');
-    const cardToPlay = selectedCard || cards[cards.length - 1]; // 如果没有选中，默认出最后一张
+    if (!selectedCard) {
+      alert('请先选择一张要出的牌！');
+      return;
+    }
+    
+    const cardToPlay = selectedCard;
     
     // 获取卡牌信息（从子元素中提取图标和名称）
     const iconSpan = cardToPlay.querySelector('.card-icon');
