@@ -1033,7 +1033,72 @@ function startTurnRotation(players) {
   window.turnIntervalId = turnInterval;
 }
 
-function initHandArea() {
+// 生成初始手牌和底牌（Issue #20）
+function generateInitialCards() {
+  console.log('🎴 [Issue #20] 开始生成初始牌组...');
+  
+  // 1. 生成自己的手牌（5张）
+  const myHand = [];
+  
+  // 规则1：必然含有1张洛阳铲
+  myHand.push(CARD_TYPES.SHOVEL);
+  
+  // 规则2：不含炸弹，其他4张随机（从非炸弹、非洛阳铲的牌型中选，或者允许重复洛阳铲？通常“其他牌随机若干”指剩余位置）
+  // 为简单起见，从除了 BOMB 以外的牌型中随机选4张
+  const availableForHand = Object.values(CARD_TYPES).filter(t => t.id !== 'bomb');
+  for (let i = 0; i < 4; i++) {
+    const randomCard = availableForHand[Math.floor(Math.random() * availableForHand.length)];
+    myHand.push(randomCard);
+  }
+  
+  // 2. 生成底牌堆（28张）
+  const deck = [];
+  
+  // 规则3：底牌中的炸弹牌为4张
+  for (let i = 0; i < 4; i++) {
+    deck.push(CARD_TYPES.BOMB);
+  }
+  
+  // 计算当前全场 SWAP 数量
+  const mySwapCount = myHand.filter(c => c.id === 'swap').length;
+  // 规则2：全场 SWAP 总数为 4 张。目前 myHand 可能有，deck 还没有。
+  // 我们需要在 deck 中补充 SWAP，使得 myHand + deck 的 SWAP 总数为 4。
+  // 注意：这里只模拟了“我”的手牌和底牌。其他玩家手牌暂时假设为0或忽略，
+  // 为了严格满足“初始手牌+底牌”总数，我们假设其他玩家手牌中 SWAP 数量为 0（或者我们在底牌中直接补足剩余）。
+  // 根据需求：“初始手牌+初始底牌中的偷梁换柱牌总数为4张”。
+  // 由于我们只初始化了“我”的手牌，我们就保证 我手牌中的SWAP + 底牌中的SWAP = 4。
+  const remainingSwap = 4 - mySwapCount;
+  for (let i = 0; i < remainingSwap; i++) {
+    deck.push(CARD_TYPES.SWAP);
+  }
+  
+  // 填充底牌剩余位置（28 - 4炸弹 - remainingSwap）
+  const remainingDeckSlots = 28 - 4 - remainingSwap;
+  const fillTypes = Object.values(CARD_TYPES).filter(t => t.id !== 'bomb' && t.id !== 'swap');
+  for (let i = 0; i < remainingDeckSlots; i++) {
+    const randomCard = fillTypes[Math.floor(Math.random() * fillTypes.length)];
+    deck.push(randomCard);
+  }
+  
+  // 3. 统计日志
+  const allCards = [...myHand, ...deck];
+  const stats = {};
+  Object.values(CARD_TYPES).forEach(type => {
+    stats[type.name] = allCards.filter(c => c.id === type.id).length;
+  });
+  
+  console.log('📊 [Issue #20] 全场牌型统计:', stats);
+  console.log('🃏 [Issue #20] 我的手牌:', myHand.map(c => c.name));
+  console.log('🗂️ [Issue #20] 底牌堆数量:', deck.length);
+  
+  return {
+    myCards: myHand,
+    deckCards: deck,
+    stats: stats
+  };
+}
+
+function initHandArea(predefinedCards = null) {
   const handCards = document.getElementById('handCards');
   const cardCount = document.getElementById('cardCount');
   const drawCardBtn = document.getElementById('drawCardBtn');
@@ -1041,12 +1106,16 @@ function initHandArea() {
   
   if (!handCards || !cardCount || !drawCardBtn || !playCardBtn) return;
   
-  // 模拟手牌数据（Issue #10：初始5张，从8种牌型中随机选择）
-  const cardTypeKeys = Object.keys(CARD_TYPES);
-  const myCards = [];
-  for (let i = 0; i < 5; i++) {
-    const randomKey = cardTypeKeys[Math.floor(Math.random() * cardTypeKeys.length)];
-    myCards.push(CARD_TYPES[randomKey]);
+  // 模拟手牌数据（Issue #20：使用生成的初始手牌）
+  const myCards = predefinedCards || [];
+  
+  // 如果没有预定义的手牌，则生成默认手牌（兼容旧逻辑）
+  if (myCards.length === 0) {
+    const cardTypeKeys = Object.keys(CARD_TYPES);
+    for (let i = 0; i < 5; i++) {
+      const randomKey = cardTypeKeys[Math.floor(Math.random() * cardTypeKeys.length)];
+      myCards.push(CARD_TYPES[randomKey]);
+    }
   }
   
   // 清空手牌区域
@@ -1085,7 +1154,7 @@ function initHandArea() {
     handCards.appendChild(cardDiv);
   });
   
-  cardCount.textContent = '5';
+  cardCount.textContent = String(myCards.length);
   drawCardBtn.disabled = true; // 初始禁用，等待回合开始
   playCardBtn.disabled = true;
   
@@ -1446,6 +1515,10 @@ function initGame() {
   isAutoPlay = false; // 重置托管状态
   pendingManualResume = false; // 重置手动恢复标记
 
+  // 执行初始发牌逻辑（Issue #20）
+  const cardDistribution = generateInitialCards();
+  console.log('🎴 [Issue #20] 初始发牌统计:', cardDistribution);
+
   let players = getStoredMatch();
   if (!players || players.length < MATCH_TARGET) {
     window.location.href = 'index.html';
@@ -1477,8 +1550,8 @@ function initGame() {
   // 初始化出牌公示区（Issue #11）
   initPlayArea();
   
-  // 初始化手牌区域
-  initHandArea();
+  // 初始化手牌区域（使用 Issue #20 生成的手牌）
+  initHandArea(cardDistribution.myCards);
   
   // 初始化离开房间按钮
   initLeaveRoom();
