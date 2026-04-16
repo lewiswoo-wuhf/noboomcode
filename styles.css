@@ -478,6 +478,36 @@ body[data-page="match"] .content {
   gap: 10px; /* 减小间距使布局更紧凑 */
   position: relative;
   z-index: 10;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  height: 180px;
+  width: 130px;
+}
+
+/* 底牌区占位文本 */
+.deck-placeholder {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.deck-placeholder .placeholder-icon {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+
+.deck-placeholder .placeholder-text {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.9rem;
 }
 
 .deck-stack {
@@ -813,11 +843,11 @@ body[data-page="match"] .content {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.85rem;
   font-weight: 700;
-  border: 3px solid #fff;
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
-  animation: badgePop 0.3s ease-out;
+  font-size: 0.85rem;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
+  z-index: 15;
+  border: 2px solid #fff;
 }
 
 @keyframes badgePop {
@@ -1072,8 +1102,11 @@ body[data-page="match"] .content {
 /* 头像上的小型托管标签 */
 .auto-play-label-mini {
   position: absolute;
-  top: -8px;
-  right: -8px;
+  bottom: -16px; /* 移到头像正下方，完全避开右上角的手牌数徽章 */
+  left: 50%;
+  transform: translateX(-50%);
+  top: auto;
+  right: auto;
   padding: 2px 6px;
   background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
   color: #fff;
@@ -1082,6 +1115,23 @@ body[data-page="match"] .content {
   font-size: 0.6rem;
   box-shadow: 0 2px 6px rgba(245, 158, 11, 0.4);
   animation: autoPulse 2s infinite;
+  white-space: nowrap;
+  z-index: 20;
+}
+
+/* Bot 身份标识 (Issue #17) */
+.bot-tag {
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1px 5px;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: #fff;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.55rem;
+  box-shadow: 0 2px 4px rgba(139, 92, 246, 0.3);
   white-space: nowrap;
   z-index: 20;
 }
