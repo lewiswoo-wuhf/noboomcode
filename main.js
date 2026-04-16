@@ -1033,7 +1033,94 @@ function startTurnRotation(players) {
   window.turnIntervalId = turnInterval;
 }
 
-function initHandArea() {
+// 生成初始手牌和底牌（Issue #20）
+function generateInitialCards() {
+  console.log('🎴 [Issue #20] 开始生成初始牌组...');
+  
+  const playerCount = MATCH_TARGET; // 5名玩家
+  const handSize = 5;
+  const deckSize = 28;
+  const totalSwapLimit = 4;
+  const bombInDeck = 4;
+
+  // 1. 初始化所有玩家的空手牌
+  const allHands = [];
+  for (let i = 0; i < playerCount; i++) {
+    allHands.push([]);
+  }
+
+  // 规则1：每个玩家必然含有1张洛阳铲
+  for (let i = 0; i < playerCount; i++) {
+    allHands[i].push(CARD_TYPES.SHOVEL);
+  }
+
+  // 填充剩余手牌位置（不含炸弹）
+  const availableForHand = Object.values(CARD_TYPES).filter(t => t.id !== 'bomb');
+  for (let i = 0; i < playerCount; i++) {
+    while (allHands[i].length < handSize) {
+      const randomCard = availableForHand[Math.floor(Math.random() * availableForHand.length)];
+      allHands[i].push(randomCard);
+    }
+  }
+
+  // 2. 生成底牌堆
+  const deck = [];
+  
+  // 规则3：底牌中的炸弹牌为4张
+  for (let i = 0; i < bombInDeck; i++) {
+    deck.push(CARD_TYPES.BOMB);
+  }
+
+  // 规则2：全场 SWAP 总数为 4 张。先统计手牌中已有的 SWAP。
+  let currentSwapCount = 0;
+  allHands.forEach(hand => {
+    currentSwapCount += hand.filter(c => c.id === 'swap').length;
+  });
+
+  // 在底牌中补足剩余的 SWAP，确保总数为 4
+  const remainingSwap = Math.max(0, totalSwapLimit - currentSwapCount);
+  for (let i = 0; i < remainingSwap; i++) {
+    deck.push(CARD_TYPES.SWAP);
+  }
+
+  // 填充底牌剩余位置
+  const remainingDeckSlots = deckSize - bombInDeck - remainingSwap;
+  const fillTypes = Object.values(CARD_TYPES).filter(t => t.id !== 'bomb' && t.id !== 'swap');
+  for (let i = 0; i < remainingDeckSlots; i++) {
+    const randomCard = fillTypes[Math.floor(Math.random() * fillTypes.length)];
+    deck.push(randomCard);
+  }
+
+  // 3. 统计日志（Issue #20：测试时显示各类牌的数量）
+  const myHand = allHands[0]; // 假设自己是第一个玩家
+  const allCards = [...myHand, ...deck];
+  const stats = {};
+  
+  console.group('🎴 [Issue #20] 初始发牌统计报告');
+  console.log('🃏 我的手牌详情:', myHand.map(c => c.name));
+  console.log('🗂️ 底牌堆总数量:', deck.length);
+  console.log('👥 玩家总数:', playerCount);
+  console.log('🔄 偷梁换柱总数限制:', totalSwapLimit);
+  
+  // 统计所有牌（包括所有玩家的手牌和底牌）
+  const globalAllCards = [...deck];
+  allHands.forEach(h => globalAllCards.push(...h));
+  
+  Object.values(CARD_TYPES).forEach(type => {
+    const count = globalAllCards.filter(c => c.id === type.id).length;
+    stats[type.name] = count;
+    console.log(`   - ${type.name}: ${count} 张`);
+  });
+  console.groupEnd();
+  
+  return {
+    myCards: myHand,
+    deckCards: deck,
+    stats: stats
+  };
+}
+
+function initHandArea(predefinedCards = null) {
   const handCards = document.getElementById('handCards');
   const cardCount = document.getElementById('cardCount');
   const drawCardBtn = document.getElementById('drawCardBtn');
@@ -1041,12 +1128,16 @@ function initHandArea() {
   
   if (!handCards || !cardCount || !drawCardBtn || !playCardBtn) return;
   
-  // 模拟手牌数据（Issue #10：初始5张，从8种牌型中随机选择）
-  const cardTypeKeys = Object.keys(CARD_TYPES);
-  const myCards = [];
-  for (let i = 0; i < 5; i++) {
-    const randomKey = cardTypeKeys[Math.floor(Math.random() * cardTypeKeys.length)];
-    myCards.push(CARD_TYPES[randomKey]);
+  // 模拟手牌数据（Issue #20：使用生成的初始手牌）
+  const myCards = predefinedCards || [];
+  
+  // 如果没有预定义的手牌，则生成默认手牌（兼容旧逻辑）
+  if (myCards.length === 0) {
+    const cardTypeKeys = Object.keys(CARD_TYPES);
+    for (let i = 0; i < 5; i++) {
+      const randomKey = cardTypeKeys[Math.floor(Math.random() * cardTypeKeys.length)];
+      myCards.push(CARD_TYPES[randomKey]);
+    }
   }
   
   // 清空手牌区域
@@ -1085,7 +1176,7 @@ function initHandArea() {
     handCards.appendChild(cardDiv);
   });
   
-  cardCount.textContent = '5';
+  cardCount.textContent = String(myCards.length);
   drawCardBtn.disabled = true; // 初始禁用，等待回合开始
   playCardBtn.disabled = true;
   
@@ -1446,6 +1537,10 @@ function initGame() {
   isAutoPlay = false; // 重置托管状态
   pendingManualResume = false; // 重置手动恢复标记
 
+  // 执行初始发牌逻辑（Issue #20）
+  const cardDistribution = generateInitialCards();
+  console.log('🎴 [Issue #20] 初始发牌统计:', cardDistribution);
+
   let players = getStoredMatch();
   if (!players || players.length < MATCH_TARGET) {
     window.location.href = 'index.html';
@@ -1477,8 +1572,8 @@ function initGame() {
   // 初始化出牌公示区（Issue #11）
   initPlayArea();
   
-  // 初始化手牌区域
-  initHandArea();
+  // 初始化手牌区域（使用 Issue #20 生成的手牌）
+  initHandArea(cardDistribution.myCards);
   
   // 初始化离开房间按钮
   initLeaveRoom();
